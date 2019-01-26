@@ -1,0 +1,18 @@
+---
+- hosts: all
+  vars:
+    - installer_url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    - installer_path: /tmp/miniconda.sh
+    - miniconda_dir: /opt/miniconda
+  tasks:
+    - name: Install bzip2
+      package:
+        name: bzip2
+    - name: Download the installer
+      get_url:
+        url: "{{installer_url}}"
+        dest: "{{installer_path}}"
+    - name: Install miniconda
+      command: bash {{installer_path}} -b -p {{miniconda_dir}}
+      args:
+        creates: "{{miniconda_dir}}"

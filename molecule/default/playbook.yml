@@ -1,0 +1,21 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    conda_exe: /opt/miniconda/bin/conda
+  roles:
+    - role: evandam.conda
+  tasks:
+    - name: Install some conda packages
+      conda:
+        name:
+          - numpy
+          - pandas
+        state: present
+        executable: "{{conda_exe}}"
+
+    - name: Get the latest version of some packages
+      conda:
+        name: conda
+        state: latest
+        executable: "{{conda_exe}}"
