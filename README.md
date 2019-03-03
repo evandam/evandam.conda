@@ -1,48 +1,51 @@
-Role Name
+evandam.conda
 =========
 
-A brief description of the role goes here.
+Manage your conda environment(s) with Ansible. Create new conda environments, install, update, and remove packages.
+
+Similar to the pip module, this supports passing a list into the `name` field. This results in fast and efficient use of running conda commands.
+
+The role is designed to make the `conda` module available for use in subsequent tasks.
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should
-be mentioned here. For instance, if the role uses the EC2 module, it may be a
-good idea to mention in this section that the boto package is required.
-
-Role Variables
---------------
-
-A description of the settable variables for this role should go here, including
-any variables that are in defaults/main.yml, vars/main.yml, and any variables
-that can/should be set via parameters to the role. Any variables that are read
-from other roles and/or the global scope (ie. hostvars, group vars, etc.) should
-be mentioned here as well.
-
-Dependencies
-------------
-
-A list of other roles hosted on Galaxy should go here, plus any details in
-regards to parameters that may need to be set for other roles, or variables that
-are used from other roles.
+* conda (tested on `4.3.4` and higher)
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables
-passed in as parameters) is always nice for users too:
-
-    - hosts: servers
-      roles:
-         - { role: evandam.conda, x: 42 }
+```yaml
+---
+- name: Test evandam.conda
+  hosts: all
+  roles:
+    - role: evandam.conda
+  tasks:
+    - name: Update conda
+      conda:
+        name: conda
+        state: latest
+        executable: /opt/conda/bin/conda
+    - name: Create a conda environment
+      conda:
+        name: python
+        version: 3.7
+        environment: python3
+        state: present
+    - name: Install some packages in the environment
+      conda:
+        name:
+          - pandas
+          - numpy
+          - tensorflow
+        environment: python3
+    - name: Install R, using a versioned name
+      conda:
+        name: r-base=3.5.0
+```
 
 License
 -------
 
 BSD
-
-Author Information
-------------------
-
-An optional section for the role authors to include contact information, or a
-website (HTML is not allowed).

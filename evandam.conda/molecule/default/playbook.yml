@@ -21,7 +21,7 @@
     - name: Downgrade conda
       conda:
         name: conda
-        version: 4.5.0
+        version: 4.3.4
     - name: Update conda to latest version
       conda:
         name: conda
@@ -32,7 +32,7 @@
         channels: conda-forge
     - name: Create an R virtual environment
       conda:
-        name: r-base=3.5.0
+        name: r-base=3.5.1
         environment: /opt/R
         state: present
     - name: Install some R packages in a venv
