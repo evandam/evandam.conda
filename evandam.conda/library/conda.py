@@ -21,7 +21,7 @@ short_description: Manage packages with conda
 version_added: "2.8"
 
 description:
-    - "Install, update, and remove packages through Anaconda, with multiple environments."
+    - "Install, update, and remove packages through Anaconda, supporting multiple environments."
 
 options:
     name:
@@ -81,7 +81,6 @@ class Conda(object):
         else:
             self.env_args = []
 
-
     def _split_name_version(self, package_spec, default_version=None):
         name = package_spec
         version = default_version
@@ -105,59 +104,83 @@ class Conda(object):
         return conda_exe
 
     def _run_conda(self, subcmd, *args, **kwargs):
-        check_rc = kwargs.get('check_rc', True)
+        check_rc = kwargs.pop('check_rc', True)
         cmd = [self.executable, subcmd]
         cmd += args
         cmd.append('--json')
         print('Running %s' % cmd)
-        return self.module.run_command(cmd, check_rc=check_rc)
+        rc, out, err = self.module.run_command(cmd)
+        if check_rc and rc != 0:
+            try:
+                outobj = json.loads(out)
+                self.module.fail_json(command=cmd,
+                                      msg=outobj['error'],
+                                      stdout=out,
+                                      stderr=err,
+                                      exception_name=outobj['exception_name'],
+                                      exception_type=outobj['exception_type'])
+            except ValueError:
+                self.module.fail_json(command=cmd, msg='Unable to parser error!',
+                                      rc=rc, stdout=out, stderr=err)
+        return rc, out, err
 
-    def _get_config(self, key):
-        """Get a conda config value"""
-        rc, out, err = self._run_conda('config', '--show', key)
-        return json.loads(out)[key]
+    def _run_package_cmd(self, subcmd, channels, *args, **kwargs):
+        args += ('-y', '--quiet')
+        for channel in channels:
+            args += ('--channel', channel)
+        rc, out, err = self._run_conda(subcmd, *args, **kwargs)
+        outobj = json.loads(out)
+        if 'actions' in outobj:
+            return outobj['actions']
 
-    def _list_envs(self):
+    def list_envs(self):
+        """List all conda environments"""
         rc, out, err = self._run_conda('env', 'list')
         return json.loads(out)['envs']
 
     def list_packages(self, env):
+        """List all packages installed in the environment"""
         rc, out, err = self._run_conda('list', *self.env_args)
         packages = json.loads(out)
         return [dict(name=p['name'], version=p['version']) for p in packages]
 
     def check_env(self, env):
+        """Check if the environment exists"""
         if env == 'base':
             return True
-
-        envs = self._list_envs()
-        if os.path.sep in env:
-            return any(e == env for e in envs)
-        else:
-            return any(os.path.basename(e) == env for e in envs)
+        envs = self.list_envs()
+        return any(e == env for e in envs)
     
     def create_env(self, env):
-        self._run_conda('create', '-y', *self.env_args)
+        """Create a new conda environment"""
+        self._run_conda('create', '-y', '--quiet', *self.env_args)
 
     @staticmethod
     def _is_present(package, installed_packages, check_version=False):
+        """Check if the package is present in the list of installed packages.
+
+        Compare versions of the target and installed package if check_version is set.
+        """
         target_name = package['name']
-        target_version = package['version']
-        # Match only as specific as the version is specified. Ex only major/minor/patch level.
-        if target_version:
-            target_version = target_version.split('.')
+
+        match = [p for p in installed_packages if p['name'] == target_name]
+        if not match:
+            return False
+        installed_package = match[0]
         
-        for installed_package in installed_packages:
-            if target_name == installed_package['name']:
-                if check_version and target_version:
-                    installed_version = installed_package['version'].split('.')
-                    if target_version == installed_version[:len(target_version)]:
-                        return True
-                return True
-        return False
+        # Match only as specific as the version is specified. Ex only major/minor/patch level.
+        target_version = package['version']
+        if target_version and check_version:
+            target_version = target_version.split('.')
+            installed_version = installed_package['version'].split('.')
+            return target_version == installed_version[:len(target_version)]
+        return True
 
     def get_absent_packages(self, target_packages, installed_packages, check_version):
-        """Return the list of packages that are not installed, or the wrong version"""
+        """Return the list of packages that are not installed.
+        
+        If check_version is set, result will include packages with the wrong version.
+        """
         return [p for p in target_packages
                 if not self._is_present(p, installed_packages, check_version)]
 
@@ -166,20 +189,29 @@ class Conda(object):
         return [p for p in target_packages
                 if self._is_present(p, installed_packages, check_version)]
 
-    def install_packages(self, packages, env=None):
+    def install_packages(self, packages, channels):
+        """Install the packages"""
         pkg_strs = []
         for package in packages:
             if package['version']:
                 pkg_strs.append('{name}={version}'.format(**package))
             else:
                 pkg_strs.append(package['name'])
-        self._run_conda('install', '-y', *pkg_strs + self.env_args)
+        return self._run_package_cmd('install', channels, *pkg_strs + self.env_args)
     
-    def remove_packages(self, packages):
-        self._run_conda('remove', '-y', *packages + self.env_args)
+    def remove_packages(self, packages, channels):
+        """Remove the packages"""
+        return self._run_package_cmd('remove', channels, *packages + self.env_args)
 
-    def update_packages(self, packages, env):
-        self._run_conda('update', *packages + self.env_args)
+    def update_packages(self, packages, channels, dry_run=False):
+        """Update the packages.
+
+        If dry_run is set, no actions are taken.
+        """
+        args = packages + self.env_args
+        if dry_run:
+            args.append('--dry-run')
+        return self._run_package_cmd('update', channels, *args)
 
 
 def run_module():
@@ -189,7 +221,7 @@ def run_module():
         state=dict(choices=['present', 'absent', 'latest'], default='present'),
         version=dict(required=False),
         executable=dict(required=False),
-        channels=dict(required=False, type='list'),
+        channels=dict(required=False, type='list', default=[]),
         environment=dict(required=False),
     )
 
@@ -200,6 +232,7 @@ def run_module():
     # for consumption, for example, in a subsequent task
     result = dict(
         changed=False,
+        actions=[],
     )
 
     # the AnsibleModule object will be our abstraction working with Ansible
@@ -215,6 +248,7 @@ def run_module():
     state = module.params['state']
     default_version = module.params['version']
     env = module.params['environment']
+    channels = module.params['channels']
 
     conda = Conda(module, env)
 
@@ -233,30 +267,42 @@ def run_module():
 
     # Install packages
     if state == 'present':
-        absent_packages = conda.get_absent_packages(target_packages, installed_packages, check_version=True)
+        absent_packages = conda.get_absent_packages(target_packages, installed_packages,
+                                                    check_version=True)
         if absent_packages:
             if not module.check_mode:
-                conda.install_packages(absent_packages)
+                actions = conda.install_packages(absent_packages, channels)
+                result['actions'] = actions
             result['changed'] = True
     # Remove packages
     elif state == 'absent':
-        present_packages = conda.get_present_packages(target_packages, installed_packages, check_version=False)
+        present_packages = conda.get_present_packages(target_packages, installed_packages,
+                                                      check_version=False)
         if present_packages:
+            names = [p['name'] for p in present_packages]
             if not module.check_mode:
-                conda.remove_packages(present_packages)
+                actions = conda.remove_packages(names, channels)
+                result['actions'] = actions
             result['changed'] = True
     # Install and/or update packages
     elif state == 'latest':
-        # First check if any are installed in the first place
-        absent_packages = conda.get_absent_packages(target_packages, installed_packages, check_version=False)
+        # Find missing packages first
+        absent_packages = conda.get_absent_packages(target_packages, installed_packages,
+                                                    check_version=False)
         if absent_packages:
             if not module.check_mode:
-                conda.install_packages(absent_packages)
+                actions = conda.install_packages(absent_packages, channels)
+                result['actions'] = actions
             result['changed'] = True
-        # TODO: Dry run of update
+        # Check what needs to be updated with a dry run
+        names = [p['name'] for p in target_packages]
+        dry_actions = conda.update_packages(names, channels, dry_run=True)
+        if dry_actions:
+            if not module.check_mode:
+                actions = conda.update_packages(names, channels)
+                result['actions'] = actions
+            result['changed'] = True
 
-    # in the event of a successful module execution, you will want to
-    # simple AnsibleModule.exit_json(), passing the key/value results
     module.exit_json(**result)
 
 def main():

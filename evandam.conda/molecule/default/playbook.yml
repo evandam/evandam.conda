@@ -1,0 +1,44 @@
+---
+- name: Converge
+  hosts: all
+  roles:
+    - role: evandam.conda
+  tasks:
+    - name: Install numpy
+      conda:
+        name: numpy
+        state: present
+    - name: Remove numpy
+      conda:
+        name: numpy
+        state: absent
+    - name: Install multiple packages
+      conda:
+        name:
+          - pandas
+          - sqlalchemy
+        state: present
+    - name: Downgrade conda
+      conda:
+        name: conda
+        version: 4.5.0
+    - name: Update conda to latest version
+      conda:
+        name: conda
+        state: latest
+    - name: Install doc8 from conda-forge
+      conda:
+        name: doc8
+        channels: conda-forge
+    - name: Create an R virtual environment
+      conda:
+        name: r-base=3.5.0
+        environment: /opt/R
+        state: present
+    - name: Install some R packages in a venv
+      conda:
+        name:
+          - r-dplyr=0.7
+          - r-devtools=1.13
+        environment: /opt/R
+        state: latest
