@@ -2,7 +2,7 @@
 - name: Converge
   hosts: all
   roles:
-    - role: evandam.conda
+    - role: conda_role
   tasks:
     - name: Install numpy
       conda:
