@@ -8,6 +8,4 @@ before_install:
 install:
   - pip install -r requirements.txt
 script:
-  - mv molecule .yamllint ../
-  - cd ../
   - molecule test
