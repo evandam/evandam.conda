@@ -3,7 +3,7 @@ galaxy_info:
   role_name: conda
   author: Evan Van Dam
   description: Manage conda environments and packages
-  company: your company (optional)
+  company: Evan Van Dam
 
   # If the issue tracker for your role is not on github, uncomment the
   # next line and provide a value
@@ -16,7 +16,7 @@ galaxy_info:
   # - GPLv3
   # - Apache
   # - CC-BY
-  license: license (GPLv2, CC-BY, etc)
+  license: BSD
 
   min_ansible_version: 1.2
 
