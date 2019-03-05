@@ -1,6 +1,8 @@
 evandam.conda
 =========
 
+[![Build Status](https://travis-ci.org/evandam/evandam.conda.svg?branch=master)](https://travis-ci.org/evandam/evandam.conda)
+
 Manage your conda environment(s) with Ansible. Create new conda environments, install, update, and remove packages.
 
 Similar to the pip module, this supports passing a list into the `name` field. This results in fast and efficient use of running conda commands.
