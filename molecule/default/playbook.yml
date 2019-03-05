@@ -26,6 +26,15 @@
       conda:
         name: conda
         state: latest
+    - name: Update conda again
+      conda:
+        name: conda
+        state: latest
+      register: update
+    - name: Verify second update did not change
+      assert:
+        that: update.changed is False
+
     - name: Install doc8 from conda-forge
       conda:
         name: doc8
