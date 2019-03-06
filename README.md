@@ -12,7 +12,7 @@ The role is designed to make the `conda` module available for use in subsequent 
 Requirements
 ------------
 
-* conda (tested on `4.3.4` and higher)
+* conda (tested on `4.4.0` and higher)
 
 Example Playbook
 ----------------

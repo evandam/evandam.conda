@@ -61,27 +61,24 @@ class Conda(object):
             except ValueError:
                 self.module.fail_json(command=cmd, msg='Unable to parser error!',
                                       rc=rc, stdout=out, stderr=err)
-        return rc, out, err
+        return rc, json.loads(out), err
 
     def _run_package_cmd(self, subcmd, channels, *args, **kwargs):
         args += ('-y', '--quiet')
         for channel in channels:
             args += ('--channel', channel)
         rc, out, err = self._run_conda(subcmd, *args, **kwargs)
-        outobj = json.loads(out)
-        if 'actions' in outobj:
-            return outobj['actions']
+        return out['actions'] if 'actions' in out else []
 
     def list_envs(self):
         """List all conda environments"""
         rc, out, err = self._run_conda('env', 'list')
-        return json.loads(out)['envs']
+        return out['envs']
 
     def list_packages(self, env):
         """List all packages installed in the environment"""
         rc, out, err = self._run_conda('list', *self.env_args)
-        packages = json.loads(out)
-        return [dict(name=p['name'], version=p['version']) for p in packages]
+        return [dict(name=p['name'], version=p['version']) for p in out]
 
     def check_env(self, env):
         """Check if the environment exists"""
@@ -94,7 +91,7 @@ class Conda(object):
 
     def create_env(self, env):
         """Create a new conda environment"""
-        self._run_conda('create', '-y', '--quiet', *self.env_args)
+        return self._run_conda('create', '-y', '--quiet', *self.env_args)
 
     @staticmethod
     def _is_present(package, installed_packages, check_version=False):
@@ -206,7 +203,7 @@ def run_module():
         if absent_packages:
             if not module.check_mode:
                 actions = conda.install_packages(absent_packages, channels)
-                result['actions'] = actions
+                result['actions'] += actions
             result['changed'] = True
     # Remove packages
     elif state == 'absent':
@@ -216,26 +213,30 @@ def run_module():
             names = [p['name'] for p in present_packages]
             if not module.check_mode:
                 actions = conda.remove_packages(names, channels)
-                result['actions'] = actions
+                result['actions'] += actions
             result['changed'] = True
     # Install and/or update packages
     elif state == 'latest':
         # Find missing packages first
         absent_packages = conda.get_absent_packages(target_packages, installed_packages,
                                                     check_version=False)
+        present_packages = conda.get_present_packages(target_packages, installed_packages,
+                                                      check_version=False)
         if absent_packages:
             if not module.check_mode:
                 actions = conda.install_packages(absent_packages, channels)
-                result['actions'] = actions
+                result['actions'] += actions
             result['changed'] = True
-        # Check what needs to be updated with a dry run
-        names = [p['name'] for p in target_packages]
-        dry_actions = conda.update_packages(names, channels, dry_run=True)
-        if dry_actions:
-            if not module.check_mode:
-                actions = conda.update_packages(names, channels)
-                result['actions'] = actions
-            result['changed'] = True
+
+        if present_packages:
+            # Check what needs to be updated with a dry run
+            names = [p['name'] for p in present_packages]
+            dry_actions = conda.update_packages(names, channels, dry_run=True)
+            if dry_actions:
+                if not module.check_mode:
+                    actions = conda.update_packages(names, channels)
+                    result['actions'] += actions
+                result['changed'] = True
 
     module.exit_json(**result)
 
