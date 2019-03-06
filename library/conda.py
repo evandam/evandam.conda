@@ -48,6 +48,13 @@ class Conda(object):
         cmd += args
         cmd.append('--json')
         rc, out, err = self.module.run_command(cmd)
+        try:
+            return rc, json.loads(out), err
+        except ValueError:
+            self.module.fail_json(command=cmd,
+                                  msg='Failed to parse output of command!',
+                                  stdout=out,
+                                  stderr=err)
         if check_rc and rc != 0:
             try:
                 outobj = json.loads(out)
