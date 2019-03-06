@@ -71,7 +71,7 @@ class Conda(object):
     def _run_package_cmd(self, subcmd, channels, *args, **kwargs):
         for channel in channels:
             args += ('--channel', channel)
-        rc, out, err = self._run_conda(subcmd, '--quiet', '--yes', *args, **kwargs)
+        rc, out, err = self._run_conda(subcmd, '-q', '-y', *args, **kwargs)
         return out['actions'] if 'actions' in out else []
 
     def list_envs(self):
