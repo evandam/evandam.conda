@@ -47,7 +47,6 @@ class Conda(object):
         cmd = [self.executable, subcmd]
         cmd += args
         cmd.append('--json')
-        print('Running %s' % cmd)
         rc, out, err = self.module.run_command(cmd)
         if check_rc and rc != 0:
             try:
