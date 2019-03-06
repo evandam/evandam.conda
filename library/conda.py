@@ -44,9 +44,8 @@ class Conda(object):
 
     def _run_conda(self, subcmd, *args, **kwargs):
         check_rc = kwargs.pop('check_rc', True)
-        cmd = [self.executable, subcmd]
+        cmd = [self.executable, subcmd, '--json']
         cmd += args
-        cmd.append('--json')
         rc, out, err = self.module.run_command(cmd)
         try:
             return rc, json.loads(out), err
@@ -70,10 +69,9 @@ class Conda(object):
         return rc, json.loads(out), err
 
     def _run_package_cmd(self, subcmd, channels, *args, **kwargs):
-        args += ('-y', '--quiet')
         for channel in channels:
             args += ('--channel', channel)
-        rc, out, err = self._run_conda(subcmd, *args, **kwargs)
+        rc, out, err = self._run_conda(subcmd, '--quiet', '--yes', *args, **kwargs)
         return out['actions'] if 'actions' in out else []
 
     def list_envs(self):
