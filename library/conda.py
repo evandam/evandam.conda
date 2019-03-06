@@ -71,7 +71,7 @@ class Conda(object):
     def _run_package_cmd(self, subcmd, channels, *args, **kwargs):
         for channel in channels:
             args += ('--channel', channel)
-        rc, out, err = self._run_conda(subcmd, '-q', '-y', *args, **kwargs)
+        rc, out, err = self._run_conda(subcmd, '--quiet', '--yes', *args, **kwargs)
         return out['actions'] if 'actions' in out else []
 
     def list_envs(self):
@@ -95,7 +95,7 @@ class Conda(object):
 
     def create_env(self, env):
         """Create a new conda environment"""
-        return self._run_conda('create', '-y', '--quiet', *self.env_args)
+        return self._run_conda('create', '--yes', '--quiet', *self.env_args)
 
     @staticmethod
     def _is_present(package, installed_packages, check_version=False):
