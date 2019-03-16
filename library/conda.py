@@ -20,7 +20,8 @@ class Conda(object):
         else:
             self.env_args = []
 
-    def _split_name_version(self, package_spec, default_version=None):
+    @staticmethod
+    def split_name_version(package_spec, default_version=None):
         name = package_spec
         version = default_version
         if '=' in package_spec:
@@ -157,6 +158,7 @@ class Conda(object):
 
 
 def run_module():
+    """Run the Ansible module"""
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
         name=dict(required=True, type='list'),
@@ -197,7 +199,7 @@ def run_module():
                 conda.create_env(env)
                 result['changed'] = True
 
-    target_packages = [conda._split_name_version(n, default_version) for n in names]
+    target_packages = [conda.split_name_version(n, default_version) for n in names]
     installed_packages = conda.list_packages(env)
 
     # Install packages
@@ -244,8 +246,8 @@ def run_module():
 
     module.exit_json(**result)
 
-def main():
+def _main():
     run_module()
 
 if __name__ == '__main__':
-    main()
+    _main()

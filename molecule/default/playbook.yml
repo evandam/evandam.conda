@@ -24,7 +24,7 @@
         name: fakepackage13412351235
         state: present
       register: bad_install
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Install numpy
       conda:
