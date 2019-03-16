@@ -47,13 +47,6 @@ class Conda(object):
         cmd = [self.executable, subcmd, '--json']
         cmd += args
         rc, out, err = self.module.run_command(cmd)
-        try:
-            return rc, json.loads(out), err
-        except ValueError:
-            self.module.fail_json(command=cmd,
-                                  msg='Failed to parse output of command!',
-                                  stdout=out,
-                                  stderr=err)
         if check_rc and rc != 0:
             try:
                 outobj = json.loads(out)
@@ -66,7 +59,14 @@ class Conda(object):
             except ValueError:
                 self.module.fail_json(command=cmd, msg='Unable to parser error!',
                                       rc=rc, stdout=out, stderr=err)
-        return rc, json.loads(out), err
+
+        try:
+            return rc, json.loads(out), err
+        except ValueError:
+            self.module.fail_json(command=cmd,
+                                  msg='Failed to parse output of command!',
+                                  stdout=out,
+                                  stderr=err)
 
     def _run_package_cmd(self, subcmd, channels, *args, **kwargs):
         for channel in channels:

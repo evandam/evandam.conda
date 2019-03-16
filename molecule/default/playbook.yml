@@ -19,6 +19,13 @@
         state: latest
       register: latest_test
 
+    - name: Try to install a package that doesn't exist
+      conda:
+        name: fakepackage13412351235
+        state: present
+      register: bad_install
+      ignore_errors: yes
+
     - name: Install numpy
       conda:
         name: numpy
@@ -45,6 +52,7 @@
           - not present_test.changed
           - not absent_test.changed
           - not latest_test.changed
+          - bad_install is failed
 
     - name: Install multiple packages
       conda:
