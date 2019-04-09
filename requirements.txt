@@ -1,4 +1,4 @@
-ansible
+tox
 molecule
 docker
 pylint
