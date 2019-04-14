@@ -18,33 +18,26 @@ galaxy_info:
   # - CC-BY
   license: BSD
 
-  min_ansible_version: 1.2
+  min_ansible_version: 2.4
 
-  # If this a Container Enabled role, provide the minimum Ansible Container version.
-  # min_ansible_container_version:
+  platforms:
+    - name: EL
+      versions:
+        - 6
+        - 7
+    - name: Fedora
+      versions:
+        - 29
+    - name: Ubuntu
+      versions:
+        - xenial
+        - bionic
+    - name: Debian
+      versions:
+        - buster
+        - stretch
+        - jessie
 
-  # Optionally specify the branch Galaxy will use when accessing the GitHub
-  # repo for this role. During role install, if no tags are available,
-  # Galaxy will use this branch. During import Galaxy will access files on
-  # this branch. If Travis integration is configured, only notifications for this
-  # branch will be accepted. Otherwise, in all cases, the repo's default branch
-  # (usually master) will be used.
-  # github_branch:
-
-  #
-  # platforms is a list of platforms, and each platform has a name and a list of versions.
-  #
-  # platforms:
-  # - name: Fedora
-  #   versions:
-  #   - all
-  #   - 25
-  # - name: SomePlatform
-  #   versions:
-  #   - all
-  #   - 1.0
-  #   - 7
-  #   - 99.99
 
   galaxy_tags: ['anaconda', 'miniconda', 'conda', 'python', 'packaging', 'development']
   # List tags for your role here, one per line. A tag is a keyword that describes
