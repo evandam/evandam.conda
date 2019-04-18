@@ -1,14 +1,16 @@
 #!/usr/bin/python
 
 # Copyright: (c) 2018, Evan Van Dam <evandam92@gmail.com>
-# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+# GNU General Public License v3.0+
+# (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
 import os
 import json
 from ansible.module_utils.basic import AnsibleModule
 
-__metaclass__ = type
 
 class Conda(object):
     def __init__(self, module, env):
@@ -34,12 +36,13 @@ class Conda(object):
             if os.path.isfile(executable):
                 conda_exe = executable
             else:
-                self.module.fail_json(msg='%s is not a valid conda executable' % executable)
+                self.module.fail_json(
+                    msg='%s is not a valid conda executable' % executable)
         else:
             conda_exe = self.module.get_bin_path('conda')
             if not conda_exe:
                 self.module.fail_json(
-                    msg='conda could not be found in the PATH and an executable was not specified.'
+                    msg='conda not found in PATH, executable not specified.'
                 )
         return conda_exe
 
@@ -58,7 +61,7 @@ class Conda(object):
                                       exception_name=outobj['exception_name'],
                                       exception_type=outobj['exception_type'])
             except ValueError:
-                self.module.fail_json(command=cmd, msg='Unable to parser error!',
+                self.module.fail_json(command=cmd, msg='Unable to parse error',
                                       rc=rc, stdout=out, stderr=err)
 
         try:
@@ -72,7 +75,12 @@ class Conda(object):
     def _run_package_cmd(self, subcmd, channels, *args, **kwargs):
         for channel in channels:
             args += ('--channel', channel)
-        rc, out, err = self._run_conda(subcmd, '--quiet', '--yes', *args, **kwargs)
+        rc, out, err = self._run_conda(subcmd,
+                                       '--quiet',
+                                       '--yes',
+                                       *args,
+                                       **kwargs
+                                       )
         return out['actions'] if 'actions' in out else []
 
     def list_envs(self):
@@ -102,7 +110,8 @@ class Conda(object):
     def _is_present(package, installed_packages, check_version=False):
         """Check if the package is present in the list of installed packages.
 
-        Compare versions of the target and installed package if check_version is set.
+        Compare versions of the target and installed package
+        if check_version is set.
         """
         target_name = package['name']
 
@@ -111,7 +120,8 @@ class Conda(object):
             return False
         installed_package = match[0]
 
-        # Match only as specific as the version is specified. Ex only major/minor/patch level.
+        # Match only as specific as the version is specified.
+        # Ex only major/minor/patch level.
         target_version = package['version']
         if target_version and check_version:
             target_version = target_version.split('.')
@@ -119,16 +129,24 @@ class Conda(object):
             return target_version == installed_version[:len(target_version)]
         return True
 
-    def get_absent_packages(self, target_packages, installed_packages, check_version):
+    def get_absent_packages(self,
+                            target_packages,
+                            installed_packages,
+                            check_version):
         """Return the list of packages that are not installed.
 
-        If check_version is set, result will include packages with the wrong version.
+        If check_version is set, result will include
+        packages with the wrong version.
         """
         return [p for p in target_packages
                 if not self._is_present(p, installed_packages, check_version)]
 
-    def get_present_packages(self, target_packages, installed_packages, check_version):
-        """Return the list of packages that are installed and should be removed"""
+    def get_present_packages(self,
+                             target_packages,
+                             installed_packages,
+                             check_version):
+        """Return the list of packages that are
+           installed and should be removed"""
         return [p for p in target_packages
                 if self._is_present(p, installed_packages, check_version)]
 
@@ -140,11 +158,15 @@ class Conda(object):
                 pkg_strs.append('{name}={version}'.format(**package))
             else:
                 pkg_strs.append(package['name'])
-        return self._run_package_cmd('install', channels, *pkg_strs + self.env_args)
+        return self._run_package_cmd('install',
+                                     channels,
+                                     *pkg_strs + self.env_args)
 
     def remove_packages(self, packages, channels):
         """Remove the packages"""
-        return self._run_package_cmd('remove', channels, *packages + self.env_args)
+        return self._run_package_cmd('remove',
+                                     channels,
+                                     *packages + self.env_args)
 
     def update_packages(self, packages, channels, dry_run=False):
         """Update the packages.
@@ -199,13 +221,15 @@ def run_module():
                 conda.create_env(env)
                 result['changed'] = True
 
-    target_packages = [conda.split_name_version(n, default_version) for n in names]
+    target_packages = [conda.split_name_version(
+        n, default_version) for n in names]
     installed_packages = conda.list_packages(env)
 
     # Install packages
     if state == 'present':
-        absent_packages = conda.get_absent_packages(target_packages, installed_packages,
-                                                    check_version=True)
+        absent_packages = conda.get_absent_packages(
+            target_packages, installed_packages,
+            check_version=True)
         if absent_packages:
             if not module.check_mode:
                 actions = conda.install_packages(absent_packages, channels)
@@ -213,8 +237,9 @@ def run_module():
             result['changed'] = True
     # Remove packages
     elif state == 'absent':
-        present_packages = conda.get_present_packages(target_packages, installed_packages,
-                                                      check_version=False)
+        present_packages = conda.get_present_packages(
+            target_packages, installed_packages,
+            check_version=False)
         if present_packages:
             names = [p['name'] for p in present_packages]
             if not module.check_mode:
@@ -224,9 +249,11 @@ def run_module():
     # Install and/or update packages
     elif state == 'latest':
         # Find missing packages first
-        absent_packages = conda.get_absent_packages(target_packages, installed_packages,
+        absent_packages = conda.get_absent_packages(target_packages,
+                                                    installed_packages,
                                                     check_version=False)
-        present_packages = conda.get_present_packages(target_packages, installed_packages,
+        present_packages = conda.get_present_packages(target_packages,
+                                                      installed_packages,
                                                       check_version=False)
         if absent_packages:
             if not module.check_mode:
@@ -246,8 +273,10 @@ def run_module():
 
     module.exit_json(**result)
 
+
 def _main():
     run_module()
+
 
 if __name__ == '__main__':
     _main()
