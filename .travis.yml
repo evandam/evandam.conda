@@ -7,9 +7,10 @@ services:
 before_install:
   - sudo apt-get -qq update
 install:
+  - pip install tox-travis
   - pip install -r requirements.txt
 script:
   - ./lint.sh
-  - molecule --debug test
+  - tox
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/
