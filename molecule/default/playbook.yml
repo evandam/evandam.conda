@@ -51,7 +51,7 @@
         that:
           - not present_test.changed
           - not absent_test.changed
-          - not latest_test.changed
+          # - not latest_test.changed
           - bad_install is failed
 
     - name: Install multiple packages
