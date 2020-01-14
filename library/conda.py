@@ -1,10 +1,139 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 # Copyright: (c) 2018, Evan Van Dam <evandam92@gmail.com>
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
+ANSIBLE_METADATA = {'metadata_version': '1.1',
+                    'status': ['preview'],
+                    'supported_by': 'community'}
+
+DOCUMENTATION = '''
+---
+module: conda
+short_description: Manage conda environments and packages
+description:  Create new conda environments, install, update, and remove packages.
+version_added: "2.6"
+author: Evan Van Dam (@evandam)
+options:
+  name:
+    description:
+      - A list, or string, of package(s).
+      - Versions and builds can optionally be specified per package,
+      - as package=version, or package=version=build.
+    required: true
+    type: list
+  state:
+    description:
+      - The desired state of the package(s) specified.
+    required: false
+    default: "present"
+    choices:
+      - present
+      - latest
+      - absent
+    type: string
+  version:
+    description:
+      - The version of the package to install.
+      - This is only applicable with a single package specified.
+      - If a version is specified within the name, this value is overridden.
+    required: false
+    default: null
+    type: string
+  executable:
+    description:
+      - The path to the conda executable.
+      - If this is not specified, the conda executable on the PATH will be used.
+      - If a valid executable cannot be found, an error will be raised.
+    required: false
+    default: null
+    type: string
+  channels:
+    description:
+      - Additional channels to include when installing packages.
+      - These channels are passed as "--channel" arguments to the conda command.
+    required: false
+    default: null
+    type: list
+  environment:
+    description:
+      - The conda environment to install/remove packages in.
+      - If the environment does not exist and state is present or latest,
+      - it will be created.
+      - The environment will not be removed if state is absent.
+      - If no environment is set, the base conda environment is used.
+    required: false
+    default: null
+    type: string
+'''
+
+EXAMPLES = '''
+- name: Install jupyter with a specific build
+    conda:
+      name: jupyter=1.0.0=py37_4
+
+- name: Install a previous version of conda
+    conda:
+      name: conda
+      version: 4.8.0
+
+- name: Update conda to latest version
+    conda:
+      name: conda
+      state: latest
+
+- name: Remove numpy
+    conda:
+      name: numpy
+      state: absent
+
+- name: Install multiple packages
+    conda:
+      name:
+        - pandas
+        - sqlalchemy
+      state: present
+
+- name: Install doc8 from conda-forge
+    conda:
+      name: doc8
+      channels: conda-forge
+
+- name: Create an R virtual environment
+    conda:
+      name: r-base=3.5.1
+      environment: /opt/R
+      state: present
+
+- name: Install some R packages in a venv
+    conda:
+       name:
+        - r-dplyr=0.7
+        - r-devtools=1.13
+    environment: /opt/R
+    state: latest
+'''
+
+RETURN = '''
+actions:
+  description: A list of actions taken by conda that modified packages.
+  returned: changed
+  type: string
+  sample: |
+    {
+        "jupyter_install.actions": [
+            "PREFIX",
+            "UNLINK",
+            "LINK",
+            "FETCH"
+        ]
+    }
+'''
+
 __metaclass__ = type
 
 import os
