@@ -4,15 +4,20 @@
   roles:
     - role: evandam.conda
   tasks:
+    - name: Install jupyter with a specific build
+      conda:
+        name: jupyter=1.0.0=py37_4
+
     - name: Install an older version of conda
       conda:
         name: conda
-        version: 4.5.0
+        version: 4.8.0
 
     - name: Update conda to latest version
       conda:
         name: conda
         state: latest
+
     - name: Update conda again
       conda:
         name: conda
@@ -30,6 +35,7 @@
       conda:
         name: numpy
         state: present
+
     - name: Install numpy again
       conda:
         name: numpy
@@ -40,6 +46,7 @@
       conda:
         name: numpy
         state: absent
+
     - name: Remove numpy again
       conda:
         name: numpy

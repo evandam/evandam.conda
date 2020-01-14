@@ -26,9 +26,13 @@ class Conda(object):
     def split_name_version(package_spec, default_version=None):
         name = package_spec
         version = default_version
+        build = None
         if '=' in package_spec:
-            name, version = package_spec.split('=')
-        return {'name': name, 'version': version}
+            splits = package_spec.split('=')
+            name, version = splits[:2]
+            if len(splits) > 2:
+                build = splits[2]
+        return {'name': name, 'version': version, 'build': build}
 
     def _get_conda(self, executable):
         conda_exe = None
@@ -153,10 +157,12 @@ class Conda(object):
         """Install the packages"""
         pkg_strs = []
         for package in packages:
+            pkg_str = package['name']
             if package['version']:
-                pkg_strs.append('{name}={version}'.format(**package))
-            else:
-                pkg_strs.append(package['name'])
+                pkg_str += '=' + package['version']
+            if package['build']:
+                pkg_str += '=' + package['build']
+            pkg_strs.append(pkg_str)
         return self._run_package_cmd('install',
                                      channels,
                                      *pkg_strs + self.env_args)
