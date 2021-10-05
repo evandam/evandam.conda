@@ -62,9 +62,9 @@ Assembly:
 This can be beneficial for several reasons. Firstly, you can separate different deployments and software setups in discrete git branches referencing only this file. Secondly, if you have collaborators that are not git savvy, they only have to worry about editing this specific file in order to update any software deployments they need, and it can be done easily f.ex by editing this raw file in the browser. Thirdly, using a vars-loop, it simplifies our code a lot. As seen in the next example.
 
 The following playbook consists of 3 discrete parts (and assumes anaconda is already installed)
-1. It parses the previously mentioned conda.yaml so our target environments and packages are readily defined.
+1. It parses the previously mentioned conda.yaml so our target environments and packages are readily defined. (optimally, channels should also be parsed like this, but in this example we are lazy and hard code them in)
 2. Installs Mamba in the base environment (see bottom for explanation).
-3. Loops through our "envs" var creating every defined environment and installs its packages using Mamba (optimally, channels should also be parsed like this, but in this example we are lazy and hard code them in)
+3. Loops through our "envs" var creating every defined environment and installs its packages using Mamba.
 ```yaml
 ---
 - name: Install Conda envs and packages
