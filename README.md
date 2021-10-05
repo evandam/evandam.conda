@@ -64,7 +64,7 @@ This can be beneficial for several reasons. Firstly, you can separate different 
 The following playbook consists of 3 discrete parts (and assumes anaconda is already installed)
 1. It parses the previously mentioned conda.yaml so our target environments and packages are readily defined.
 2. Installs Mamba in the base environment (see bottom for explanation).
-3. Loops through our "envs" var creating every defined environment and installs its packages using Mamba 
+3. Loops through our "envs" var creating every defined environment and installs its packages using Mamba (optimally, channels should also be parsed like this, but in this example we are lazy and hard code them in)
 ```yaml
 ---
 - name: Install Conda envs and packages
@@ -80,12 +80,12 @@ The following playbook consists of 3 discrete parts (and assumes anaconda is alr
     - name: Install Mamba in base env using standard conda
       become_user: user
       conda:
-	    environment: base
-	    name: mamba
-	    state: latest
-	    channels:
-	      - conda-forge
-	    executable: /opt/miniconda3/bin/conda
+        environment: base
+        name: mamba
+        state: latest
+        channels:
+          - conda-forge
+        executable: /opt/miniconda3/bin/conda
     - name: Create Conda environments and install packages using Mamba instead of default Conda
       become_user: user
       conda:
@@ -95,9 +95,6 @@ The following playbook consists of 3 discrete parts (and assumes anaconda is alr
         channels:
           - bioconda
           - conda-forge
-          - agbiome
-          - hcc
-          - nickp60
           - defaults
         executable: /opt/miniconda3/bin/mamba
       loop: "{{  envs  |  dict2items  }}"
