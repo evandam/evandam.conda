@@ -2,6 +2,7 @@
 evandam.conda
 =========
 
+[![Build Status](https://travis-ci.org/evandam/evandam.conda.svg?branch=master)](https://travis-ci.org/evandam/evandam.conda)
 
 Manage your conda environment(s) with Ansible. Create new conda environments, install, update, and remove packages.
 
